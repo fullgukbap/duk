@@ -35,10 +35,6 @@ func (d *Duk) On(event string, handler HandlerFunc) {
 	d.router.Register(event, handler)
 }
 
-func (d *Duk) Broadcast(data any) error {
-	return d.orchestration.Broadcast(data)
-}
-
 func (d *Duk) Listen(port string) error {
 	fmt.Printf(banner, Version, fmt.Sprintf(" port%s", port))
 
