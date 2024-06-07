@@ -5,17 +5,22 @@ import "encoding/json"
 type HandlerFunc func(*Ctx)
 
 type Ctx struct {
-	Payload string
+	payload any
 }
 
-func NewCtx(payload string) *Ctx {
+func NewCtx(payload any) *Ctx {
 	return &Ctx{
-		Payload: payload,
+		payload: payload,
 	}
 }
 
 func (c *Ctx) Parse(out any) error {
-	err := json.Unmarshal([]byte(c.Payload), out)
+	jsonBytes, err := json.Marshal(c.payload)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(jsonBytes, out)
 	if err != nil {
 		return err
 	}
