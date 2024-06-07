@@ -3,6 +3,7 @@ package duk
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 
 	"github.com/google/uuid"
@@ -38,13 +39,7 @@ func (d *Duk) Broadcast(data any) error {
 	return d.orchestration.Broadcast(data)
 }
 
-func (d *Duk) Listen(ports ...string) error {
-	port := ""
-	if len(ports) > 0 {
-		port = ports[0]
-	} else {
-		port = ":8080"
-	}
+func (d *Duk) Listen(port string) error {
 	fmt.Printf(banner, Version, fmt.Sprintf(" port%s", port))
 
 	ln, err := net.Listen("tcp", port)
@@ -76,9 +71,19 @@ func (d *Duk) requestHandler(id string, conn net.Conn) {
 
 	packet := Pakcet{}
 	for {
-		json.NewDecoder(conn).Decode(&packet)
+		err := json.NewDecoder(conn).Decode(&packet)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			panic(err)
+		}
 
-		handler, _ := d.router.Path(packet.Event)
-		handler(NewCtx(packet.Payload.(string)))
+		handler, err := d.router.Path(packet.Event)
+		if err != nil {
+			panic(err)
+		}
+
+		handler(NewCtx(packet.Payload))
 	}
 }
