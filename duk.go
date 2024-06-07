@@ -69,7 +69,7 @@ func (d *Duk) requestHandler(id string, conn net.Conn) {
 		d.orchestration.Remove(id)
 	}()
 
-	packet := Pakcet{}
+	packet := Packet{}
 	for {
 		err := json.NewDecoder(conn).Decode(&packet)
 		if err != nil {

@@ -1,6 +1,6 @@
 package duk
 
-type Pakcet struct {
+type Packet struct {
 	Event   string
 	Payload any
 }
