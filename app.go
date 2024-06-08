@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync"
 
 	"github.com/google/uuid"
 )
@@ -19,23 +20,27 @@ const (
 		" \x1b[1;30m%s\x1b[1;32m%v\x1b[0000m\n\n"
 )
 
-type Duk struct {
-	orchestration *Orchestration
+type App struct {
+	mutex sync.Mutex
+
 	router        *Router
+	orchestration *Orchestration
+	hooks         *Hooks
 }
 
-func New() *Duk {
-	return &Duk{
-		orchestration: NewOrchestration(),
-		router:        NewRouter(),
+func New() *App {
+	app := &App{
+		mutex: sync.Mutex{},
 	}
+
+	app.router = newRouter(app)
+	app.orchestration = newOrchestration(app)
+	app.hooks = newHooks(app)
+
+	return app
 }
 
-func (d *Duk) On(event string, handler HandlerFunc) {
-	d.router.Register(event, handler)
-}
-
-func (d *Duk) Listen(port string) error {
+func (app *App) Listen(port string) error {
 	fmt.Printf(banner, Version, fmt.Sprintf(" port%s", port))
 
 	ln, err := net.Listen("tcp", port)
@@ -49,20 +54,24 @@ func (d *Duk) Listen(port string) error {
 			return err
 		}
 
-		uuid := uuid.New().String()
-		err = d.orchestration.Add(uuid, conn)
+		id := uuid.New().String()
+		err = app.orchestration.Add(id, conn)
 		if err != nil {
 			return err
 		}
 
-		go d.requestHandler(uuid, conn)
+		for _, handler := range app.hooks.onConnect {
+			handler(id, conn)
+		}
+
+		go app.requestHandler(id, conn)
 	}
 }
 
-func (d *Duk) requestHandler(id string, conn net.Conn) {
+func (app *App) requestHandler(id string, conn net.Conn) {
 	defer func() {
 		conn.Close()
-		d.orchestration.Remove(id)
+		app.orchestration.Remove(id)
 	}()
 
 	packet := Packet{}
@@ -70,12 +79,15 @@ func (d *Duk) requestHandler(id string, conn net.Conn) {
 		err := json.NewDecoder(conn).Decode(&packet)
 		if err != nil {
 			if err == io.EOF {
+				for _, handler := range app.hooks.onDisconnect {
+					handler(id, err)
+				}
 				break
 			}
 			panic(err)
 		}
 
-		handler, err := d.router.Path(packet.Event)
+		handler, err := app.router.match(packet.Event)
 		if err != nil {
 			panic(err)
 		}

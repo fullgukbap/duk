@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net"
 	"slices"
-	"sync"
 )
 
 var (
@@ -15,20 +14,21 @@ var (
 
 // Orchestration는 TCP Conn들을 관리하는 구조체 입니다.
 type Orchestration struct {
+	app *App
+
 	Conns map[string]net.Conn
-	mu    sync.Mutex
 }
 
-func NewOrchestration() *Orchestration {
+func newOrchestration(app *App) *Orchestration {
 	return &Orchestration{
+		app:   app,
 		Conns: make(map[string]net.Conn),
-		mu:    sync.Mutex{},
 	}
 }
 
 func (o *Orchestration) Add(id string, newConn net.Conn) error {
-	o.mu.Lock()
-	defer o.mu.Unlock()
+	o.app.mutex.Lock()
+	defer o.app.mutex.Unlock()
 
 	_, exists := o.Conns[id]
 	if exists {
@@ -40,8 +40,8 @@ func (o *Orchestration) Add(id string, newConn net.Conn) error {
 }
 
 func (o *Orchestration) Get(id string) (net.Conn, error) {
-	o.mu.Lock()
-	defer o.mu.Unlock()
+	o.app.mutex.Lock()
+	defer o.app.mutex.Unlock()
 
 	conn, exists := o.Conns[id]
 	if !exists {
@@ -52,8 +52,8 @@ func (o *Orchestration) Get(id string) (net.Conn, error) {
 }
 
 func (o *Orchestration) Remove(id string) error {
-	o.mu.Lock()
-	defer o.mu.Unlock()
+	o.app.mutex.Lock()
+	defer o.app.mutex.Unlock()
 
 	_, exists := o.Conns[id]
 	if !exists {

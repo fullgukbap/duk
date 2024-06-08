@@ -7,21 +7,24 @@ var (
 )
 
 type Router struct {
-	Handlers map[string]HandlerFunc
+	app *App
+
+	handlers map[string]HandlerFunc
 }
 
-func NewRouter() *Router {
+func newRouter(app *App) *Router {
 	return &Router{
-		Handlers: make(map[string]HandlerFunc),
+		app:      app,
+		handlers: make(map[string]HandlerFunc),
 	}
 }
 
-func (r *Router) Register(event string, handler HandlerFunc) {
-	r.Handlers[event] = handler
+func (a *App) On(event string, handler HandlerFunc) {
+	a.router.handlers[event] = handler
 }
 
-func (r *Router) Path(event string) (HandlerFunc, error) {
-	handler, exists := r.Handlers[event]
+func (r *Router) match(event string) (HandlerFunc, error) {
+	handler, exists := r.handlers[event]
 	if !exists {
 		return nil, ErrNonEventExists
 	}
