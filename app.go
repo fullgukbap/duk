@@ -26,6 +26,7 @@ type App struct {
 	router        *Router
 	orchestration *Orchestration
 	hooks         *Hooks
+	tickRater     *TickRater
 }
 
 func New() *App {
@@ -36,6 +37,7 @@ func New() *App {
 	app.router = newRouter(app)
 	app.orchestration = newOrchestration(app)
 	app.hooks = newHooks(app)
+	app.tickRater = newTickRater(app)
 
 	return app
 }
@@ -48,6 +50,8 @@ func (app *App) Listen(port string) error {
 		return err
 	}
 
+	go app.Update()
+
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -55,7 +59,7 @@ func (app *App) Listen(port string) error {
 		}
 
 		id := uuid.New().String()
-		err = app.orchestration.Add(id, conn)
+		err = app.orchestration.add(id, conn)
 		if err != nil {
 			return err
 		}
@@ -71,7 +75,7 @@ func (app *App) Listen(port string) error {
 func (app *App) requestHandler(id string, conn net.Conn) {
 	defer func() {
 		conn.Close()
-		app.orchestration.Remove(id)
+		app.orchestration.remove(id)
 	}()
 
 	packet := Packet{}

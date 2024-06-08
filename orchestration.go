@@ -26,7 +26,7 @@ func newOrchestration(app *App) *Orchestration {
 	}
 }
 
-func (o *Orchestration) Add(id string, newConn net.Conn) error {
+func (o *Orchestration) add(id string, newConn net.Conn) error {
 	o.app.mutex.Lock()
 	defer o.app.mutex.Unlock()
 
@@ -39,7 +39,7 @@ func (o *Orchestration) Add(id string, newConn net.Conn) error {
 	return nil
 }
 
-func (o *Orchestration) Get(id string) (net.Conn, error) {
+func (o *Orchestration) get(id string) (net.Conn, error) {
 	o.app.mutex.Lock()
 	defer o.app.mutex.Unlock()
 
@@ -51,7 +51,7 @@ func (o *Orchestration) Get(id string) (net.Conn, error) {
 	return conn, nil
 }
 
-func (o *Orchestration) Remove(id string) error {
+func (o *Orchestration) remove(id string) error {
 	o.app.mutex.Lock()
 	defer o.app.mutex.Unlock()
 
@@ -64,21 +64,7 @@ func (o *Orchestration) Remove(id string) error {
 	return nil
 }
 
-func (o *Orchestration) Emit(id string, data any) error {
-	conn, err := o.Get(id)
-	if err != nil {
-		return err
-	}
-
-	err = json.NewDecoder(conn).Decode(data)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (o *Orchestration) Broadcast(data any, ignores ...string) error {
+func (o *Orchestration) broadcast(data any, ignores ...string) error {
 	for id, conn := range o.Conns {
 		if slices.Contains(ignores, id) {
 			continue
