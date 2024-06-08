@@ -21,7 +21,7 @@ func newTickRater(app *App) *TickRater {
 	}
 }
 
-func (app *App) Update() {
+func (app *App) update() {
 	interval := time.Minute / time.Duration(app.tickRater.tickRate)
 	ticker := time.Tick(interval)
 

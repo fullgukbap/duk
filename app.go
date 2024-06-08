@@ -50,7 +50,7 @@ func (app *App) Listen(port string) error {
 		return err
 	}
 
-	go app.Update()
+	go app.update()
 
 	for {
 		conn, err := ln.Accept()
