@@ -1,7 +1,7 @@
 package duk
 
 import (
-	"log"
+	"fmt"
 	"time"
 )
 
@@ -28,7 +28,7 @@ func (app *App) update() {
 	for range ticker {
 		err := app.orchestration.broadcast(app.tickRater.tickRateData)
 		if err != nil {
-			log.Println("boradcast 실패")
+			fmt.Println("boradcast 실패: ", err)
 		}
 	}
 }

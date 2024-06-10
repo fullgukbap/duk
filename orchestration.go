@@ -70,7 +70,7 @@ func (o *Orchestration) broadcast(data any, ignores ...string) error {
 			continue
 		}
 
-		err := json.NewDecoder(conn).Decode(data)
+		err := json.NewEncoder(conn).Encode(data)
 		if err != nil {
 			return err
 		}

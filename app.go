@@ -93,7 +93,7 @@ func (app *App) requestHandler(id string, conn net.Conn) {
 
 		handler, err := app.router.match(packet.Event)
 		if err != nil {
-			panic(err)
+			break
 		}
 
 		handler(NewCtx(packet.Payload))
